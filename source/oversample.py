@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import math
 
-def oversample(X_train, y_train, z_train, target_col, bias_col, bias_types):
+def oversample(X_train, y_train, z_train, target_col, bias_names):
 
     # Calculate some stats on out training set so we can augment
     n_train = X_train.shape[0]
@@ -15,7 +15,7 @@ def oversample(X_train, y_train, z_train, target_col, bias_col, bias_types):
         i_t_z[z] = X_train.index[np.logical_and(z_train==z, y_train==1)].tolist()
         n_t_z[z] = len(i_t_z[z])
         f_t_z[z] = n_t_z[z]/n_z[z]
-        print("Proportion of {}={} for which {}:  {:2.2%}".format(bias_col, bool(z), target_col, f_t_z[z]))
+        print("Proportion of {} for which {}:  {:2.2%}".format(bias_names[z], target_col, f_t_z[z]))
 
     # Augment the training set by oversampling rich women
     frac, integer = math.modf(f_t_z[1] / f_t_z[0])
