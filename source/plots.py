@@ -37,12 +37,18 @@ def basic_stats(data_df, bias_col, target_col, pos_target):
     plt.xticks(rotation='horizontal')
     plt.xlabel(target_col)
     plt.ylabel('count')
+    plt.savefig('../figures/original-data.png')
 
     print('')
     pos_bias_frac = [0.]*len(bias_names)
+    prop = [0.]*len(bias_names)
     for i, b in enumerate(bias_names):
         pos_bias_frac[i] = target_by_bias[b, pos_target]
-        print('Proportion {} with {} {} = {:2.2%}'.format(b, target_col, pos_target, pos_bias_frac[i]/n_bias[i]))
+        prop[i] = pos_bias_frac[i]/n_bias[i]
+        print('Proportion {} with {} {} = {:2.2%}'.format(b, target_col, pos_target, prop[i]))
+    bias_factor = max(prop)/min(prop)
+    print('')
+    print('bias factor =', bias_factor)
 
 
 def correlation_heatmap(data_df):
@@ -65,8 +71,8 @@ def get_bias_factor(y_pred, z_test, target_name, bias_name, categories, filename
     target_by_bias_df = pd.DataFrame(data = temp, index = categories[target_name], columns=categories[bias_name])
     display(target_by_bias_df)
 
-    display(target_by_bias_df.sum())
-    print(target_by_bias_df.sum().sum())
+    #display(target_by_bias_df.sum())
+    #print(target_by_bias_df.sum().sum())
 
     target_by_bias_df.plot.bar()
     #plt.legend(loc='upper left')
@@ -82,8 +88,7 @@ def get_bias_factor(y_pred, z_test, target_name, bias_name, categories, filename
         prop[i] =  pos_bias_frac[i]/target_by_bias_df.sum()[i]
         print('Proportion {} with {} {} = {:2.2%}'.format(b, target_name, categories[target_name][1], prop[i]))
     bias_factor = prop[1]/prop[0]
-
-    return bias_factor
+    print('bias factor =', bias_factor)
 
 
 def probability_density_function(y_pred, z_test, target_col, bias_name, bias_names, filename):
