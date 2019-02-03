@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import math
+import streamlit as st
 
 def oversample(X_train, y_train, z_train, target_col, bias_names):
 
@@ -15,7 +16,7 @@ def oversample(X_train, y_train, z_train, target_col, bias_names):
         i_t_z[z] = X_train.index[np.logical_and(z_train==z, y_train==1)].tolist()
         n_t_z[z] = len(i_t_z[z])
         f_t_z[z] = n_t_z[z]/n_z[z]
-        print("Proportion of {} for which {}:  {:2.2%}".format(bias_names[z], target_col, f_t_z[z]))
+        st.write("Proportion of {} for which {} before oversampling:  {:2.2%}".format(bias_names[z], target_col, f_t_z[z]))
 
     # Augment the training set by oversampling rich women
     frac, integer = math.modf(f_t_z[1] / f_t_z[0])
@@ -34,5 +35,5 @@ def oversample(X_train, y_train, z_train, target_col, bias_names):
     z_new = pd.concat([z_new, z_train.loc[i_frac]], ignore_index=True)
 
     # Check we have the right number of data points in our augmented training set
-    print('Should have ',n_train+integer*n_t_z[0]+n_frac,' data points:', X_new.shape[0])
+    #st.write('Should have ',n_train+integer*n_t_z[0]+n_frac,' data points:', X_new.shape[0])
     return X_new, y_new, z_new
