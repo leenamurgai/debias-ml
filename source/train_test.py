@@ -31,12 +31,12 @@ def make_results_df(n_train):
         columns=[int(n_train/3), int(2*n_train/3), int(n_train)])
 
 
-def make_training_and_test_sets(X, y, z, num_train):
+def make_training_and_test_sets(X, y, Z, num_train):
     num_all = X.shape[0]
     num_test = num_all - num_train
     test_frac = float(num_test)/float(num_all)
 
-    X_train, X_test, y_train, y_test, z_train, z_test = train_test_split(X, y, z, test_size=test_frac, stratify=y, random_state=0)
+    X_train, X_test, y_train, y_test, Z_train, Z_test = train_test_split(X, y, Z, test_size=test_frac, stratify=y, random_state=0)
     X_train2, X_train1, y_train2, y_train1 = train_test_split(X_train, y_train, test_size=0.333333, stratify=y_train, random_state=0)
 
     X_train = X_train.reset_index(drop=True)
@@ -47,10 +47,10 @@ def make_training_and_test_sets(X, y, z, num_train):
     y_train2 = y_train2.reset_index(drop=True)
     y_train1 = y_train1.reset_index(drop=True)
     y_test = y_test.reset_index(drop=True)
-    z_train = z_train.reset_index(drop=True)
-    z_test = z_test.reset_index(drop=True)
+    Z_train = Z_train.reset_index(drop=True)
+    Z_test = Z_test.reset_index(drop=True)
 
-    return X_train, X_train2, X_train1, X_test, y_train, y_train2, y_train1, y_test, z_train, z_test.reset_index(drop=True)
+    return X_train, X_train2, X_train1, X_test, y_train, y_train2, y_train1, y_test, Z_train, Z_test.reset_index(drop=True)
 
 
 def normalise(X_train,  X_train2,  X_train1,  X_test):

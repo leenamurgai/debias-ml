@@ -4,30 +4,25 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import streamlit as st
 
+from data import categories_to_columns
 
 sns.set()
 
-def target_by_bias_table_histogram(target_by_bias_df, target_name, figname):
+def target_by_bias_table_histogram(target_by_bias_df, target_name, bias_name, figname):
     st.write(target_by_bias_df)
 
     bias_names = list(target_by_bias_df)
     pos_target = target_by_bias_df.index[1]
-    n_bias = target_by_bias_df.sum()
 
-    pos_bias_frac = [0.]*len(bias_names)
-    prop = [0.]*len(bias_names)
-    for i, b in enumerate(bias_names):
-        pos_bias_frac[i] = target_by_bias_df[b][pos_target]
-        prop[i] = pos_bias_frac[i]/n_bias[i]
-        st.write('Proportion {} with {} {} = {:2.2%}'.format(b, target_name, pos_target, prop[i]))
-    bias_factor = max(prop)/min(prop)
-    st.write('bias factor = {:.2f}'.format(bias_factor))
+    st.write('Bias factor = ', target_by_bias_df.iloc[1].max()/target_by_bias_df.iloc[1].min())
 
-    target_by_bias_df.plot.bar()
+    target_by_bias_df.rename(index=str, columns={'Asian-Pac-Islander':'Asian', 'Amer-Indian-Eskimo':'Am-In-Es'}, inplace=True)
+
+    target_by_bias_df.loc[pos_target].plot.bar()
     plt.xticks(rotation='horizontal')
-    plt.xlabel(target_name)
-    plt.ylabel('count')
-    plt.savefig('../figures/'+figname+'.png')
+    plt.xlabel(bias_name)
+    plt.ylabel('Proportion '+target_name+pos_target)
+    plt.savefig('../figures/'+figname+'-hist.png')
     st.pyplot()
     plt.gcf().clear()
     plt.close()
@@ -45,14 +40,39 @@ def heatmap(corr_df, figname):
     # Draw the heatmap with the mask and correct aspect ratio
     plt.figure(figsize=(28,28))
     ax = sns.heatmap(corr_df, mask=mask, cmap=cmap, linewidths=.5, cbar=False)
-    #sns.heatmap(corr_df, mask=mask, cmap=cmap, vmax=1.0, square=True, linewidths=.5, cbar_kws={"shrink": .5}, ax=ax)
-    #cbar = ax.collections[0].colorbar
-    #cbar.ax.tick_params(labelsize=40)
-    #ax.set_title(title)
     plt.savefig('../figures/'+figname+'.png')
     st.pyplot()
     plt.gcf().clear()
     plt.close()
+
+
+def probability_density_function(y_pred, z_test, target_name, bias_name, categories, figname):
+    categories_col = categories_to_columns(categories)
+    target_col = categories_col[target_name][1]
+    for i in [0,1]:
+        ax = sns.distplot(y_pred[z_test==i], hist=False, label=categories[bias_name][i])
+    ax.set_xlim(0,1)
+    ax.set_title('Model Prediction Probability Density Function')
+    ax.set_ylabel('density')
+    ax.set_xlabel('P('+target_col+'|'+bias_name+')')
+    fig = ax.get_figure()
+    fig.savefig('../figures/'+figname+'-dist.png')
+    st.pyplot()
+    plt.gcf().clear()
+    plt.close()
+    get_bias_factor(y_pred, z_test, target_name, bias_name, categories, figname)
+
+def probability_density_functions(y_pred, Z_test, target_name, bias_names, categories, figname):
+    categories_col = categories_to_columns(categories)
+    bias_cols = [categories_col[b][1] for b in bias_names]
+    for i, b in enumerate(bias_names):
+        probability_density_function(y_pred, Z_test[bias_cols[i]], target_name, b, categories, figname+'-'+b)
+    z_test = np.logical_and( Z_test[bias_cols[0]]==1 , Z_test[bias_cols[1]]==1 )
+    bias_name = bias_names[0]+' & '+bias_names[1]
+    joint_bias = categories[bias_names[0]][0]+' & '+categories[bias_names[1]][0]
+    bias_types = [ joint_bias , 'others' ]
+    joint_dict = {target_name: categories[target_name], bias_name: bias_types}
+    probability_density_function(y_pred, z_test, target_name, bias_name, joint_dict, figname+'-'+bias_names[0]+'-'+bias_names[1])
 
 
 def get_bias_factor(y_pred, z_test, target_name, bias_name, categories, figname):
@@ -63,18 +83,5 @@ def get_bias_factor(y_pred, z_test, target_name, bias_name, categories, figname)
     target_by_bias_df = pd.DataFrame(data = temp, index = categories[target_name], columns=categories[bias_name])
     #st.write(target_by_bias_df.sum())
     #st.write(target_by_bias_df.sum().sum())
-    target_by_bias_table_histogram(target_by_bias_df, target_name, figname)
-
-
-def probability_density_function(y_pred, z_test, target_col, bias_name, bias_names, figname):
-    for i in [0,1]:
-        ax = sns.distplot(y_pred[z_test==i], hist=False, label=bias_names[i])
-    ax.set_xlim(0,1)
-    ax.set_title('Model Prediction Probability Density Function')
-    ax.set_ylabel('density')
-    ax.set_xlabel('P('+target_col+'|'+bias_name+')')
-    fig = ax.get_figure()
-    fig.savefig('../figures/'+figname+'.png')
-    st.pyplot()
-    plt.gcf().clear()
-    plt.close()
+    target_by_bias_df = target_by_bias_df/target_by_bias_df.sum()
+    target_by_bias_table_histogram(target_by_bias_df, target_name, bias_name, figname)
