@@ -1,6 +1,20 @@
 import pandas as pd
 import streamlit as st
 
+"""
+class Data(object):
+    def __init__(self, data_df, bias_names=['sex', 'race'], target_name='ann_salary', pos_target='>50K'):
+        self.data_df, self.categories = preprocess_data(data_df)
+        self.binarise_bias_cols(self.data_df, self.categories, pos_bias_labels)
+        self.remove_redundant_cols(data_df, self.categories, target_name, pos_target)
+        categories_col   = categories_to_columns(categories)
+        bias_col_types   = [categories[b] for b in bias_names]
+        bias_cols        = [categories_col[b][1] for b in bias_names]
+        target_col_types = categories[target_name]
+        target_col       = categories_col[target_name][1]
+        move_target_col_to_end(data_df, target_col)
+"""
+
 def preprocess_data(data_df, prefix_sep=' is '):
     out = pd.DataFrame(index=data_df.index)  # output dataframe, initially empty
     categories = {}
