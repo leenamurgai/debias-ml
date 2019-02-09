@@ -48,7 +48,7 @@ def basic_stats(data_df, bias_cols, target_col, pos_target):
                 pos_bias_labels[col].append(b)
 
         target_by_bias_table_histogram(target_by_bias_df, target_col, col, 'original-data-'+col)
-        
+
     return pos_bias_labels
 
 

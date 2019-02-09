@@ -82,8 +82,9 @@ st.write('')
 # Save our processed data
 data_df.to_csv('../data/processed/'+filename, index=False)
 
-################################################################################
 
+################################################################################
+"""
 st.subheader('2.2 Post-processing exploration')
 st.write('')
 st.write('**Top 10 most correlated features to the target feature**')
@@ -98,7 +99,7 @@ st.write('')
 st.write('**Correlation Heatmap**')
 corr_df = data_df.corr()
 heatmap(corr_df, 'correlation-heat-map')
-
+"""
 ################################################################################
 
 st.write('')
@@ -140,6 +141,7 @@ st.write('')
 # Set up the Oversampler
 oversampler = Oversampler(X_train, y_train, Z_train, target_col, bias_cols, bias_col_types)
 oversampler.original_data_stats()
+"""
 X_new, y_new, Z_new = oversampler.get_oversampled_data()
 #X_new, y_new, Z_new = oversample(X_train, y_train, Z_train, target_col, bias_cols, bias_col_types)
 st.write('')
@@ -178,19 +180,22 @@ for b in bias_cols:
 st.write('')
 st.write('**Heatmap showing change in correlations after augmenting data by oversampling**')
 heatmap(new_data_df.corr()-corr_df, 'correlation-change')
-
+"""
 ################################################################################
 ################################################################################
 ################################################################################
 
 from train_test import make_results_df
 from model import nn_classifier
+from train_test import make_train_test_sets
 from train_test import train_predict
+from train_test import train_predict_new
 from plots import probability_density_functions
-from plots import get_bias_factor
+from plots import plot_distributions
 
 st.header('3 Training a 3 layer neural network...')
 st.write('')
+"""
 st.subheader('3.1 ...on all the data')
 st.write('')
 
@@ -205,7 +210,7 @@ y_pred = train_predict(clf_nn, X_train1, y_train1, X_test, y_test, results_df)
 y_pred = train_predict(clf_nn, X_train2, y_train2, X_test, y_test, results_df)
 y_pred = train_predict(clf_nn, X_train, y_train, X_test, y_test, results_df)
 
-st.write(results_df)
+st.table(results_df)
 probability_density_functions(y_pred, Z_test, target_name, bias_names, categories, 'all-data')
 
 ################################################################################
@@ -222,7 +227,7 @@ y_pred = train_predict(clf_nn, X_train1[X_train1.columns.difference(bias_cols)],
 y_pred = train_predict(clf_nn, X_train2[X_train2.columns.difference(bias_cols)], y_train2, X_test[X_test.columns.difference(bias_cols)], y_test, results_df)
 y_pred = train_predict(clf_nn, X_train[X_train.columns.difference(bias_cols)], y_train, X_test[X_test.columns.difference(bias_cols)], y_test, results_df)
 
-st.write(results_df)
+st.table(results_df)
 probability_density_functions(y_pred, Z_test, target_name, bias_names, categories, 'no-bias-data')
 
 ################################################################################
@@ -244,7 +249,7 @@ y_pred = train_predict(clf_nn, X_train1_new, y_train1_new, X_test_new, y_test_ne
 y_pred = train_predict(clf_nn, X_train2_new, y_train2_new, X_test_new, y_test_new, results_df)
 y_pred = train_predict(clf_nn, X_train_new, y_train_new, X_test_new, y_test_new, results_df)
 
-st.write(results_df)
+st.table(results_df)
 probability_density_functions(y_pred, Z_test_new, target_name, bias_names, categories, 'fair-data')
 
 ################################################################################
@@ -262,80 +267,36 @@ y_pred = train_predict(clf_nn, X_train1_new, y_train1_new, X_test, y_test, resul
 y_pred = train_predict(clf_nn, X_train2_new, y_train2_new, X_test, y_test, results_df)
 y_pred = train_predict(clf_nn, X_train_new, y_train_new, X_test, y_test, results_df)
 
-st.write(results_df)
+st.table(results_df)
 probability_density_functions(y_pred, Z_test, target_name, bias_names, categories, 'fair-algo')
 
 ################################################################################
-
+"""
 st.write('')
-st.subheader('3.5 ...after oversampling under-represented classes in the training data by a factor of 2 and testing on original test data')
-st.write('')
-
-# Oversampling to address bias in the training dataset
-X_new, y_new, Z_new = oversampler.get_oversampled_data(2)
-st.write('')
-st.write('Augmented data set: {} samples'.format(X_new.shape[0]))
-
-# Work out how many data point we need to train from our augmented dataset ()
-new_n_train = X_new.shape[0]*n_train/X_all.shape[0]
-new_n_train = int(new_n_train - new_n_train%3)
-
-results_df = make_results_df(new_n_train)
-
-st.write('')
-st.write('**We split our augmented data set into training and test sets:**')
-X_train_new, X_train2_new, X_train1_new, X_test_new, y_train_new, y_train2_new, y_train1_new, y_test_new, Z_train_new, Z_test_new = make_training_and_test_sets(X_new, y_new, Z_new, new_n_train)
-
-st.write('Augmented training set: {} samples'.format(X_train_new.shape[0]))
-st.write('Augmented test set: {} samples'.format(X_test_new.shape[0]))
-
-# initialise NeuralNet Classifier
-clf_nn = nn_classifier(n_features=X_train_new.shape[1])
-#st.write(clf_nn)
-
-# Train on different size training sets and predict on a separate test set
-y_pred = train_predict(clf_nn, X_train1_new, y_train1_new, X_test, y_test, results_df)
-y_pred = train_predict(clf_nn, X_train2_new, y_train2_new, X_test, y_test, results_df)
-y_pred = train_predict(clf_nn, X_train_new, y_train_new, X_test, y_test, results_df)
-
-st.write(results_df)
-probability_density_functions(y_pred, Z_test, target_name, bias_names, categories, 'fair-algo-2')
-
-################################################################################
-
-st.write('')
-st.subheader('3.6 ...after oversampling under-represented classes in the training data by a factor of 3 and testing on original test data')
+st.subheader('3.5 Oversampling under-represented classes by different amounts')
 st.write('')
 
-# Oversampling to address bias in the training dataset
-X_new, y_new, Z_new = oversampler.get_oversampled_data(3)
-st.write('')
-st.write('Augmented data set: {} samples'.format(X_new.shape[0]))
+results_df = pd.DataFrame()
 
-# Work out how many data point we need to train from our augmented dataset ()
-new_n_train = X_new.shape[0]*n_train/X_all.shape[0]
-new_n_train = int(new_n_train - new_n_train%3)
+for factor in range (11):
+    # Oversampling to address bias in the training dataset
+    X_new, y_new, Z_new = oversampler.get_oversampled_data(factor)
 
-results_df = make_results_df(new_n_train)
+    # Work out how many data point we need to train from our augmented dataset ()
+    new_n_train = X_new.shape[0] * n_train / X_all.shape[0]
+    new_n_train = int(new_n_train - new_n_train%3)
 
-st.write('')
-st.write('**We split our augmented data set into training and test sets:**')
-X_train_new, X_train2_new, X_train1_new, X_test_new, y_train_new, y_train2_new, y_train1_new, y_test_new, Z_train_new, Z_test_new = make_training_and_test_sets(X_new, y_new, Z_new, new_n_train)
+    #results_df = make_results_df(new_n_train)
+    X_train_new, X_test_new, y_train_new, y_test_new, Z_train_new, Z_test_new = make_train_test_sets(X_new, y_new, Z_new, new_n_train)
 
-st.write('Augmented training set: {} samples'.format(X_train_new.shape[0]))
-st.write('Augmented test set: {} samples'.format(X_test_new.shape[0]))
+    # initialise NeuralNet Classifier
+    clf_nn = nn_classifier(n_features=X_train_new.shape[1])
+    #st.write(clf_nn)
 
-# initialise NeuralNet Classifier
-clf_nn = nn_classifier(n_features=X_train_new.shape[1])
-#st.write(clf_nn)
+    y_pred = train_predict_new(clf_nn, X_train_new, y_train_new, X_test, y_test, results_df, factor)
+    plot_distributions(y_pred, Z_test, target_name, bias_names, categories, factor, results_df, 'fair-algo-'+str(factor))
 
-# Train on different size training sets and predict on a separate test set
-y_pred = train_predict(clf_nn, X_train1_new, y_train1_new, X_test, y_test, results_df)
-y_pred = train_predict(clf_nn, X_train2_new, y_train2_new, X_test, y_test, results_df)
-y_pred = train_predict(clf_nn, X_train_new, y_train_new, X_test, y_test, results_df)
-
-st.write(results_df)
-probability_density_functions(y_pred, Z_test, target_name, bias_names, categories, 'fair-algo-3')
+st.table(results_df)
 
 ################################################################################
 ################################################################################
