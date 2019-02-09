@@ -47,13 +47,14 @@ class Oversampler(object):
         Z_new = self.Z_train.copy()
         for i in [0,1]:
             for j in [0,1]:
-                num_new_points = oversample_factor*(self.f_t_Z[1][1]*self.n_Z[i][j] - self.n_t_Z[i][j])/(1.0-self.f_t_Z[1][1])
+                num_new_points = float(oversample_factor)*(self.f_t_Z[1][1]*self.n_Z[i][j] - self.n_t_Z[i][j])/(1.0-self.f_t_Z[1][1])
                 #st.write(i, j, num_new_points)
                 if i==0 or j==0:
                     #frac, integer = math.modf(f_t_Z[1][1] / f_t_Z[i][j])
                     frac, integer = math.modf(num_new_points / self.n_t_Z[i][j])
                     n_frac = int(frac*self.n_t_Z[i][j])
-                    i_frac = np.random.choice(self.i_t_Z[i][j], n_frac)
+                    #i_frac = np.random.choice(self.i_t_Z[i][j], n_frac)
+                    i_frac = self.i_t_Z[i][j][: n_frac]
                     for k in range(int(integer)):
                         X_new = pd.concat([X_new, self.X_train.loc[self.i_t_Z[i][j]]], ignore_index=True)
                         y_new = pd.concat([y_new, self.y_train.loc[self.i_t_Z[i][j]]], ignore_index=True)
