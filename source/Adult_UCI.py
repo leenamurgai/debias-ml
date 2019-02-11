@@ -4,6 +4,7 @@
 
 import sys
 import pandas as pd
+import numpy as np
 import streamlit as st
 
 ################################################################################
@@ -33,7 +34,7 @@ pos_target  = '>50K'
 pos_bias_labels is a dict mapping each bias_name to a list of the types
 we associate to the postive label"""
 
-st.write('1 Exploration')
+st.header('1 Exploration')
 st.write('')
 
 st.write('**The first 5 rows of the data:**')
@@ -71,7 +72,7 @@ target_col       = categories_col[target_name][1]
 move_target_col_to_end(data_df, target_col)
 
 st.write('')
-st.write('We also reduce our bias features to 2 possible classes so our binary bias features are')
+st.write('We reduce our bias features to 2 possible classes so our bias features each correspond to a single column')
 st.write(bias_cols)
 
 st.write('')
@@ -84,7 +85,7 @@ data_df.to_csv('../data/processed/'+filename, index=False)
 
 
 ################################################################################
-"""
+
 st.subheader('2.2 Post-processing exploration')
 st.write('')
 st.write('**Top 10 most correlated features to the target feature**')
@@ -99,7 +100,7 @@ st.write('')
 st.write('**Correlation Heatmap**')
 corr_df = data_df.corr()
 heatmap(corr_df, 'correlation-heat-map')
-"""
+
 ################################################################################
 
 st.write('')
@@ -135,15 +136,14 @@ st.write('Test set: {} samples'.format(X_test.shape[0]))
 ################################################################################
 
 st.write('')
-st.subheader('2.5 Augmenting the training data by oversampling')
+st.subheader('2.5 Setup the Oversampler')
 st.write('')
 
 # Set up the Oversampler
 oversampler = Oversampler(X_train, y_train, Z_train, target_col, bias_cols, bias_col_types)
 oversampler.original_data_stats()
-"""
+
 X_new, y_new, Z_new = oversampler.get_oversampled_data()
-#X_new, y_new, Z_new = oversample(X_train, y_train, Z_train, target_col, bias_cols, bias_col_types)
 st.write('')
 st.write('Augmented data set: {} samples'.format(X_new.shape[0]))
 
@@ -180,7 +180,7 @@ for b in bias_cols:
 st.write('')
 st.write('**Heatmap showing change in correlations after augmenting data by oversampling**')
 heatmap(new_data_df.corr()-corr_df, 'correlation-change')
-"""
+
 ################################################################################
 ################################################################################
 ################################################################################
@@ -195,23 +195,25 @@ from plots import plot_distributions
 
 st.header('3 Training a 3 layer neural network...')
 st.write('')
-"""
+
 st.subheader('3.1 ...on all the data')
 st.write('')
 
-results_df = make_results_df(n_train)
-
 # initialise NeuralNet Classifier
 clf_nn = nn_classifier(n_features=X_train.shape[1])
-#st.write(clf_nn)
-
+"""
+results_df = make_results_df(n_train)
 # Train on different size training sets and predict on a separate test set
 y_pred = train_predict(clf_nn, X_train1, y_train1, X_test, y_test, results_df)
 y_pred = train_predict(clf_nn, X_train2, y_train2, X_test, y_test, results_df)
 y_pred = train_predict(clf_nn, X_train, y_train, X_test, y_test, results_df)
-
 st.table(results_df)
-probability_density_functions(y_pred, Z_test, target_name, bias_names, categories, 'all-data')
+#probability_density_functions(y_pred, Z_test, target_name, bias_names, categories, 'all-data')
+"""
+# Get distributions for slides
+results_df = pd.DataFrame()
+y_pred = train_predict_new(clf_nn, X_train, y_train, X_test, y_test, results_df, 0)
+plot_distributions(y_pred, Z_test, target_name, bias_names, categories, 0, results_df, 'all-data')
 
 ################################################################################
 
@@ -220,79 +222,86 @@ st.subheader('3.2 ...with bias columns removed')
 st.write('')
 
 clf_nn = nn_classifier(n_features=X_train[X_train.columns.difference(bias_cols)].shape[1])
-#st.write(clf_nn)
-
+"""
 # Train on different size training sets and predict on a separate test set
 y_pred = train_predict(clf_nn, X_train1[X_train1.columns.difference(bias_cols)], y_train1, X_test[X_test.columns.difference(bias_cols)], y_test, results_df)
 y_pred = train_predict(clf_nn, X_train2[X_train2.columns.difference(bias_cols)], y_train2, X_test[X_test.columns.difference(bias_cols)], y_test, results_df)
 y_pred = train_predict(clf_nn, X_train[X_train.columns.difference(bias_cols)], y_train, X_test[X_test.columns.difference(bias_cols)], y_test, results_df)
-
 st.table(results_df)
-probability_density_functions(y_pred, Z_test, target_name, bias_names, categories, 'no-bias-data')
+#probability_density_functions(y_pred, Z_test, target_name, bias_names, categories, 'no-bias-data')
+"""
+# Get distributions for slides
+results_df = pd.DataFrame()
+y_pred = train_predict_new(clf_nn, X_train[X_train.columns.difference(bias_cols)], y_train, X_test[X_test.columns.difference(bias_cols)], y_test, results_df, 0)
+plot_distributions(y_pred, Z_test, target_name, bias_names, categories, 0, results_df, 'no-bias-data')
 
 ################################################################################
 
 st.write('')
 st.subheader('3.3 ...after oversampling under-represented classes in the training data and testing from the same distribution')
 st.write('')
-st.write('Here we want to validate our oversampling - if we have done it correctly, when we test on data from the same distribution we should find that the bias reduction is significant with a bias factor close to 1.')
+st.write('These results do not reflect how our model would work on real data since the test set is from the oversampled data. The purpose of these tests is to validate our oversampling - if we have done it correctly, when we test on data from the same (oversampled) distribution we should find that the bias reduction is significant with a bias factor close to 1.')
 st.write('')
 
 results_df = make_results_df(new_n_train)
 
 # initialise NeuralNet Classifier
 clf_nn = nn_classifier(n_features=X_train_new.shape[1])
-#st.write(clf_nn)
-
+"""
 # Train on different size training sets and predict on a separate test set
 y_pred = train_predict(clf_nn, X_train1_new, y_train1_new, X_test_new, y_test_new, results_df)
 y_pred = train_predict(clf_nn, X_train2_new, y_train2_new, X_test_new, y_test_new, results_df)
 y_pred = train_predict(clf_nn, X_train_new, y_train_new, X_test_new, y_test_new, results_df)
-
 st.table(results_df)
-probability_density_functions(y_pred, Z_test_new, target_name, bias_names, categories, 'fair-data')
+#probability_density_functions(y_pred, Z_test_new, target_name, bias_names, categories, 'fair-data')
+"""
+# Get distributions for slides
+results_df = pd.DataFrame()
+y_pred = train_predict_new(clf_nn, X_train_new, y_train_new, X_test_new, y_test_new, results_df, 0)
+plot_distributions(y_pred, Z_test_new, target_name, bias_names, categories, 0, results_df, 'fair-data')
 
 ################################################################################
-
+"""
 st.write('')
 st.subheader('3.4 ...after oversampling under-represented classes in the training data and testing on original test data')
 st.write('')
 
 # initialise NeuralNet Classifier
 clf_nn = nn_classifier(n_features=X_train_new.shape[1])
-#st.write(clf_nn)
 
 # Train on different size training sets and predict on a separate test set
 y_pred = train_predict(clf_nn, X_train1_new, y_train1_new, X_test, y_test, results_df)
 y_pred = train_predict(clf_nn, X_train2_new, y_train2_new, X_test, y_test, results_df)
 y_pred = train_predict(clf_nn, X_train_new, y_train_new, X_test, y_test, results_df)
-
 st.table(results_df)
-probability_density_functions(y_pred, Z_test, target_name, bias_names, categories, 'fair-algo')
+#probability_density_functions(y_pred, Z_test, target_name, bias_names, categories, 'fair-algo')
 
-################################################################################
+# Get distributions for slides
+results_df = pd.DataFrame()
+y_pred = train_predict_new(clf_nn, X_train_new, y_train_new, X_test, y_test, results_df, 0)
+plot_distributions(y_pred, Z_test_new, target_name, bias_names, categories, 0, results_df, 'fair-algo')
 """
+################################################################################
+
+from sklearn.utils import shuffle
+
 st.write('')
-st.subheader('3.5 Oversampling under-represented classes by different amounts')
+st.subheader('3.4 ...after oversampling under-represented classes by different amounts')
 st.write('')
 
 results_df = pd.DataFrame()
 
-for factor in range (11):
+#for factor in np.linspace(0.0, 5.0, num=11):
+for factor in range(1, 11):
+    st.write('**oversample factor:**', factor)
     # Oversampling to address bias in the training dataset
     X_new, y_new, Z_new = oversampler.get_oversampled_data(factor)
-
-    # Work out how many data point we need to train from our augmented dataset ()
-    new_n_train = X_new.shape[0] * n_train / X_all.shape[0]
-    new_n_train = int(new_n_train - new_n_train%3)
-
-    #results_df = make_results_df(new_n_train)
-    X_train_new, X_test_new, y_train_new, y_test_new, Z_train_new, Z_test_new = make_train_test_sets(X_new, y_new, Z_new, new_n_train)
-
+    # Shuffle the data after oversampling (we use all the points so the test set size is zero)
+    #X_train_new, X_test_new, y_train_new, y_test_new, Z_train_new, Z_test_new = make_train_test_sets(X_new, y_new, Z_new, X_new.shape[0])
+    X_train_new, y_train_new, Z_train_new = shuffle(X_new, y_new, Z_new, random_state=0)
     # initialise NeuralNet Classifier
     clf_nn = nn_classifier(n_features=X_train_new.shape[1])
-    #st.write(clf_nn)
-
+    # make predictions on the test set
     y_pred = train_predict_new(clf_nn, X_train_new, y_train_new, X_test, y_test, results_df, factor)
     plot_distributions(y_pred, Z_test, target_name, bias_names, categories, factor, results_df, 'fair-algo-'+str(factor))
 

@@ -1,8 +1,11 @@
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
 import streamlit as st
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 from data import categories_to_columns
 
@@ -86,7 +89,7 @@ def get_bias_factor(y_pred, z_test, target_name, bias_name, categories):
     target_by_bias_df = target_by_bias_df/target_by_bias_df.sum()
     #st.write(target_by_bias_df)
     bias_factor = target_by_bias_df.iloc[1].max()/target_by_bias_df.iloc[1].min()
-    st.write('Bias factor = ', bias_factor)
+    st.write('Bias factor(', bias_name, ') = ', bias_factor)
     return bias_factor
 
 
@@ -110,16 +113,17 @@ def plot_distributions(y, Z, target_name, bias_names, categories, factor, result
         ax.set_title("sensitive attibute: {}".format(b))
         if i == 0:
             ax.set_ylabel('prediction distribution')
-        ax.set_xlabel(r'$P({{income>50K}}|z_{{{}}})$'.format(b))
-    fig.text(1.0, 0.9, f"Training oversample factor #{factor}", fontsize='16')
-    fig.text(1.0, 0.65, '\n'.join([#"Prediction performance:",
-                                   #f"- ROC AUC: {results_df['ROC AUC']:.2f}",
-                                   f"- Accuracy: {results_df['Accuracy'][factor]:.2f}",
-                                   f"- F1 score: {results_df['F1 score'][factor]:.2f}",
-                                   f"- Precision: {results_df['Precision'][factor]:.2f}",
-                                   f"- Recall: {results_df['Recall'][factor]:.2f}"]), fontsize='14')
-    fig.text(1.0, 0.4, '\n'.join(["Bias factor:"] +
-                                 [f"- {b}: {results_df['Bias factor: '+b][factor]:.2f}" for b in bias_names]), fontsize='14')
+        #ax.set_xlabel(r'$P({{{}}}|z_{{{}}})$'.format(categories_col[target_name][1], b))
+        ax.set_xlabel(r'$P({{Income>50K}}|z_{{{}}})$'.format(b))
+    fig.text(1.0, 0.9, f"Oversample factor = {factor}", fontsize='20')
+    fig.text(1.0, 0.5, '\n'.join(["Prediction performance:",
+                                  #f"- ROC AUC: {results_df['ROC AUC']:.2f}",
+                                  f"- Accuracy: {results_df['Accuracy'][factor]:.2f}",
+                                  f"- F1 score: {results_df['F1 score'][factor]:.2f}",
+                                  f"- Precision: {results_df['Precision'][factor]:.2f}",
+                                  f"- Recall: {results_df['Recall'][factor]:.2f}"]), fontsize='18')
+    fig.text(1.0, 0.25, '\n'.join(["Bias factor:"] +
+                                  [f"- {b}: {results_df['Bias factor: '+b][factor]:.2f}" for b in bias_names]), fontsize='18')
     fig.tight_layout()
     plt.savefig('../figures/'+figname+'-dist.png', bbox_inches='tight')
     st.pyplot()
