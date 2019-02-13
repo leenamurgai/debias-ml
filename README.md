@@ -1,5 +1,5 @@
 # DebiasML
-a practical, explainable and effective approach to reducing bias in machine learning algorithms.
+A practical, explainable and effective approach to reducing bias in machine learning algorithms.
 
 ## Overview
 
@@ -49,7 +49,7 @@ $ source activate debias-ml
 - [Streamlit](streamlit.io)
 
 ### Running the code
-Type
+
 ```shell
 $ python source/adult_uci.py
 ```
