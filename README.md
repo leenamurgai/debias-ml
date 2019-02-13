@@ -12,7 +12,7 @@ Machine learning is being used at an ever increasing rate to automate decisions 
 In DebiasML, I have developed a practical and explainable solution through novel application of oversampling. Though popular for data imbalance problems, oversampling has not been adopted to address bias. When tested on the Adult UCI dataset, DebiasML outperforms the state of the art (GANs) on many dimensions. It results in a significantly higher F1 score (as much as +17%) whilst being equally accurate; training and inference are significantly cheaper; it is model agnostic, transparent and by construction improves diversity in its predictions.
 
 The graphic below shows the distribution of predictions on the test set as it changes with the oversampling factor along with performance and bias metrics:
-![oversample gif](https://github.com/leenamurgai/debias-ml/static/oversample.gif)
+![oversample gif](https://github.com/leenamurgai/debias-ml/blob/master/static/oversample.gif)
 
 ### Resource list
 - **Blog post** explaining the problem, solution approach and results will be linked to here when available
