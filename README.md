@@ -50,6 +50,7 @@ $ source activate debias-ml
 
 ### Running the code
 
+cd into the source directory and call
 ```shell
-$ python source/adult_uci.py
+$ python adult_uci.py
 ```
