@@ -111,19 +111,13 @@ def train_predict(clf, X_train, y_train, X_test, y_test, results_df):
     results_df.at['Prediction time' , len(y_train)] = t_pred
     return y_pred
 
+
 def train_predict_new(clf, X_train, y_train, X_test, y_test, results_df, factor):
     results_df.at[factor, 'Training time'] = train_classifier(clf, X_train, y_train)
     y_pred, t_pred = predict_labels(clf, X_train, y_train)
-    #results_df.at[factor, 'F1 score (train)'] = f1_score(y_train.values, y_pred>0.5)
-    #results_df.at[factor, 'Precision (train)'] = precision_score(y_train.values, y_pred>0.5)
-    #results_df.at[factor, 'Recall (train)'] = recall_score(y_train.values, y_pred>0.5)
-    #results_df.at[factor, 'Accuracy (train)'] = accuracy_score(y_train.values, y_pred>0.5)
-    #results_df.at[factor, 'ROC AUC (train)'] = roc_auc_score(y_train.values, y_pred)
     y_pred, t_pred = predict_labels(clf, X_test, y_test)
     results_df.at[factor, 'F1 score'] = f1_score(y_test.values, y_pred>0.5)
     results_df.at[factor, 'Precision'] = precision_score(y_test.values, y_pred>0.5)
     results_df.at[factor, 'Recall'] = recall_score(y_test.values, y_pred>0.5)
     results_df.at[factor, 'Accuracy'] = accuracy_score(y_test.values, y_pred>0.5)
-    #results_df.at[factor, 'ROC AUC'] = roc_auc_score(y_test.values, y_pred)
-    #results_df.at[factor, 'Prediction time'] = t_pred
     return y_pred
