@@ -1,4 +1,5 @@
 # DebiasML
+
 A practical, explainable and effective approach to reducing bias in machine learning algorithms.
 
 ## Overview
@@ -15,8 +16,10 @@ The graphic below shows the distribution of predictions on the test set as it ch
 ![oversample gif](https://github.com/leenamurgai/debias-ml/blob/master/static/oversample.gif)
 
 ### Resource list
+
 - **Blog post** explaining the problem, solution approach and results will be linked to here when available
 - [**Presentation slides**](http://bit.ly/debias-ml-slides) explaining the problem, solution approach and results in 5 mins are available here
+- [**Presentation recording**](http://bit.ly/debias-ml-recording) explaining
 - [**Streamlit report**](http://share.streamlit.io/0.25.0-cdyb/index.html?id=HpMQLQaCFmL4p2dgA86Wz9) showing data exploration and results can be found here
 
 ## Running the code on your machine
