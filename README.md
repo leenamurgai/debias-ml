@@ -10,16 +10,16 @@ Machine learning is being used at an ever increasing rate to automate decisions 
 
 ### Solution
 
-In DebiasML, I have developed a practical and explainable solution through novel application of oversampling. Though popular for data imbalance problems, oversampling has not been adopted to address bias. When tested on the Adult UCI dataset, DebiasML outperforms the state of the art (GANs) on many dimensions. It results in a significantly higher F1 score (as much as +17%) whilst being equally accurate; training and inference are significantly cheaper; it is model agnostic, transparent and by construction improves diversity in its predictions.
+In DebiasML, I have developed a practical and explainable solution through novel application of oversampling. Though popular for data imbalance problems, oversampling has not been adopted to address bias. When tested on the Adult UCI dataset, DebiasML outperforms the state of the art (GANs) on many dimensions. It results in a significantly higher F1 score (as much as +17%) whilst being equally accurate; training is ten times faster; it is model agnostic, transparent and by construction improves diversity in its predictions.
 
 The graphic below shows the distribution of predictions on the test set as it changes with the oversampling factor along with performance and bias metrics:
 ![oversample gif](https://github.com/leenamurgai/debias-ml/blob/master/static/oversample.gif)
 
 ### Resource list
 
-- **Blog post** explaining the problem, solution approach and results will be linked to here when available
+- [**Blog post**](http://bit.ly/debias-ml-blog) explaining the problem, solution approach and results will be linked to here when available
 - [**Presentation slides**](http://bit.ly/debias-ml-slides) explaining the problem, solution approach and results in 5 mins are available here
-- [**Presentation recording**](http://bit.ly/debias-ml-recording)
+- [**Presentation recording**](http://bit.ly/debias-ml-recording) will be linked to here when available
 - [**Streamlit report**](http://share.streamlit.io/0.25.0-cdyb/index.html?id=HpMQLQaCFmL4p2dgA86Wz9) showing data exploration and results can be found here
 
 ## Running the code on your machine
