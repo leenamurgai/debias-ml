@@ -4,7 +4,7 @@ import math
 import streamlit as st
 
 
-class Oversampler(object):
+class Oversampler:
     def __init__(self, X_train, y_train, Z_train, target_col, bias_cols, bias_col_types):
         self.X_train = X_train
         self.y_train = y_train

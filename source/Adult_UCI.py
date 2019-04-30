@@ -1,8 +1,11 @@
+""" This is the 'main' python file which calls all others to produce the
+Streamlit report.
+"""
+
 ################################################################################
 ################################################################################
 ################################################################################
 
-import sys
 import pandas as pd
 import numpy as np
 import streamlit as st
@@ -24,33 +27,26 @@ st.write('Data read successfully!')
 ################################################################################
 ################################################################################
 
-from explore import basic_stats
-
-bias_names  = ['sex', 'race']
-target_name = 'ann_salary'
+sensitive_features  = ['sex', 'race']
+target_feature = 'ann_salary'
 pos_target  = '>50K'
-
-"""We transform each bias_name to a bianry data type
-pos_bias_labels is a dict mapping each bias_name to a list of the types
-we associate to the postive label"""
 
 st.header('1 Exploration')
 st.write('')
 
-st.write('**The first 5 rows of the data:**')
+st.write('**The first 5 rows of the raw data:**')
 st.write(data_df.head())
 
-pos_bias_labels = basic_stats(data_df, bias_names, target_name, pos_target)
+st.write('')
+st.write('**Some basic statistics:**')
+st.write('Number of data points =', len(data_df.index))
+st.write('Number of features =', len(data_df.columns)-1)
 
 ################################################################################
 ################################################################################
 ################################################################################
 
-from data import preprocess_data
-from data import binarise_bias_cols
-from data import remove_redundant_cols
-from data import move_target_col_to_end
-from data import categories_to_columns
+from data import Data
 from explore import top_n_correlated_features
 from plots import heatmap
 from train_test import make_training_and_test_sets
@@ -61,45 +57,36 @@ st.header('2 Preparing the Data')
 st.write('')
 st.subheader('2.1 Converting categorical columns to binary')
 
-data_df, categories = preprocess_data(data_df)
-binarise_bias_cols(data_df, categories, pos_bias_labels)
-remove_redundant_cols(data_df, categories, target_name, pos_target)
-categories_col   = categories_to_columns(categories)
-bias_col_types   = [categories[b] for b in bias_names]
-bias_cols        = [categories_col[b][1] for b in bias_names]
-target_col_types = categories[target_name]
-target_col       = categories_col[target_name][1]
-move_target_col_to_end(data_df, target_col)
+data = Data(data_df, sensitive_features, target_feature, pos_target)
 
 st.write('')
 st.write("""We reduce our bias features to 2 possible classes so our bias
 features each correspond to a single column""")
-st.write(bias_cols)
+st.write(data.bias_cols)
 
 st.write('')
 st.write('**The first 5 rows of the data:**')
-st.write(data_df.head())
-st.write('')
+st.write(data.data_df.head())
 
 # Save our processed data
-data_df.to_csv('../data/processed/'+filename, index=False)
-
+data.data_df.to_csv('../data/processed/'+filename, index=False)
 
 ################################################################################
 
+st.write('')
 st.subheader('2.2 Post-processing exploration')
 st.write('')
 st.write('**Top 10 most correlated features to the target feature**')
 st.write('')
-st.write(top_n_correlated_features(data_df, target_col, 10))
+st.write(top_n_correlated_features(data.data_df, data.target_col, 10))
 st.write('')
 st.write('**Top 10 most correlated features to the bias feature**')
-for b in bias_cols:
+for b in data.bias_cols:
     st.write('')
-    st.write(top_n_correlated_features(data_df, b, 10))
+    st.write(top_n_correlated_features(data.data_df, b, 10))
 st.write('')
 st.write('**Correlation Heatmap**')
-corr_df = data_df.corr()
+corr_df = data.data_df.corr()
 heatmap(corr_df, 'correlation-heat-map')
 
 ################################################################################
@@ -109,16 +96,13 @@ st.subheader('2.3 Separate features and labels')
 st.write('')
 
 # Extract feature (X) and target (y) columns
-feature_cols = list(data_df.columns)
-feature_cols.remove(target_col) # leave bias_col in features
+st.write("Number features: ", len(data.feature_cols))
+st.write("Target column: ", data.target_col)
+st.write("Bias columns: ",data.bias_cols)
 
-st.write("Number feature columns: ", len(feature_cols))
-st.write("Target column: ",target_col)
-st.write("Bias columns: ",bias_cols)
-
-X_all = data_df[feature_cols]
-y_all = data_df[target_col]
-Z_all = data_df[bias_cols]
+X_all = data.data_df[data.feature_cols]
+y_all = data.data_df[data.target_col]
+Z_all = data.data_df[data.bias_cols]
 
 ################################################################################
 
@@ -128,7 +112,9 @@ st.write('')
 
 # Splitting the original dataset into training and testing parts
 n_train = 30000
-X_train, X_train2, X_train1, X_test, y_train, y_train2, y_train1, y_test, Z_train, Z_test = make_training_and_test_sets(X_all, y_all, Z_all, n_train)
+(X_train, X_train2, X_train1, X_test,
+y_train, y_train2, y_train1, y_test,
+Z_train, Z_test) = make_training_and_test_sets(X_all, y_all, Z_all, n_train)
 X_train, X_train2, X_train1, X_test = normalise(X_train,  X_train2,  X_train1, X_test)
 
 st.write('Training set: {} samples'.format(X_train.shape[0]))
@@ -142,7 +128,7 @@ st.write('')
 
 # Set up the Oversampler
 oversampler = Oversampler(X_train, y_train, Z_train,
-                          target_col, bias_cols, bias_col_types)
+                          data.target_col, data.bias_cols, data.bias_col_types)
 oversampler.original_data_stats()
 
 X_new, y_new, Z_new = oversampler.get_oversampled_data()
@@ -155,28 +141,28 @@ new_n_train = int(new_n_train - new_n_train%3)
 
 st.write('')
 st.write('**We split our augmented data set into training and test sets:**')
-X_train_new, X_train2_new, X_train1_new, X_test_new, y_train_new, y_train2_new, y_train1_new, y_test_new, Z_train_new, Z_test_new = make_training_and_test_sets(X_new, y_new, Z_new, new_n_train)
+(X_train_new, X_train2_new, X_train1_new, X_test_new,
+y_train_new, y_train2_new, y_train1_new, y_test_new,
+Z_train_new, Z_test_new) = make_training_and_test_sets(X_new, y_new, Z_new, new_n_train)
 
 st.write('Augmented training set: {} samples'.format(X_train_new.shape[0]))
 st.write('Augmented test set: {} samples'.format(X_test_new.shape[0]))
-#st.write(bias_name, categories[bias_name])
-#st.write(target_name, categories[target_name])
 
 ################################################################################
 
 st.subheader('2.6 Post-aumentation exploration')
 st.write('')
 
-new_data_df = pd.DataFrame(columns=list(data_df))
+new_data_df = pd.DataFrame(columns=list(data.data_df))
 new_data_df[list(X_train)] = X_train_new
-new_data_df[target_col] = y_train_new
+new_data_df[data.target_col] = y_train_new
 
 st.write('**Top 10 most correlated features to the target feature**')
 st.write('')
-st.write(top_n_correlated_features(new_data_df, target_col, 10))
+st.write(top_n_correlated_features(new_data_df, data.target_col, 10))
 st.write('')
 st.write('**Top 10 most correlated features to the bias feature**')
-for b in bias_cols:
+for b in data.bias_cols:
     st.write('')
     st.write(top_n_correlated_features(new_data_df, b, 10))
 st.write('')
@@ -187,7 +173,6 @@ heatmap(new_data_df.corr()-corr_df, 'correlation-change')
 ################################################################################
 ################################################################################
 ################################################################################
-
 from train_test import make_results_df
 from model import nn_classifier
 from train_test import make_train_test_sets
@@ -211,17 +196,13 @@ y_pred = train_predict(clf_nn, X_train1, y_train1, X_test, y_test, results_df)
 y_pred = train_predict(clf_nn, X_train2, y_train2, X_test, y_test, results_df)
 y_pred = train_predict(clf_nn, X_train, y_train, X_test, y_test, results_df)
 st.table(results_df)
-#probability_density_functions(y_pred, Z_test,
-                               target_name, bias_names, categories,
-                               'all-data')
+#probability_density_functions(y_pred, Z_test, data, all-data')
 """
 # Get distributions for slides
 results_df = pd.DataFrame()
 y_pred = train_predict_new(clf_nn, X_train, y_train, X_test, y_test,
                                    results_df, 0)
-plot_distributions(y_pred, Z_test,
-                   target_name, bias_names, categories,
-                   0, results_df, 'all-data')
+plot_distributions(y_pred, Z_test, data, 0, results_df, 'all-data')
 
 ################################################################################
 
@@ -229,41 +210,37 @@ st.write('')
 st.subheader('3.2 ...with bias columns removed')
 st.write('')
 
-clf_nn = nn_classifier(n_features=X_train[X_train.columns.difference(bias_cols)].shape[1])
+clf_nn = nn_classifier(n_features=X_train[X_train.columns.difference(data.bias_cols)].shape[1])
 """
 # Train on different size training sets and predict on a separate test set
 y_pred = train_predict(clf_nn,
-                       X_train1[X_train1.columns.difference(bias_cols)],
-                       y_train1, X_test[X_test.columns.difference(bias_cols)],
+                       X_train1[X_train1.columns.difference(data.bias_cols)],
+                       y_train1, X_test[X_test.columns.difference(data.bias_cols)],
                        y_test,
                        results_df)
 y_pred = train_predict(clf_nn,
-                       X_train2[X_train2.columns.difference(bias_cols)],
-                       y_train2, X_test[X_test.columns.difference(bias_cols)],
+                       X_train2[X_train2.columns.difference(data.bias_cols)],
+                       y_train2, X_test[X_test.columns.difference(data.bias_cols)],
                        y_test,
                        results_df)
 y_pred = train_predict(clf_nn,
-                       X_train[X_train.columns.difference(bias_cols)],
+                       X_train[X_train.columns.difference(data.bias_cols)],
                        y_train,
-                       X_test[X_test.columns.difference(bias_cols)],
+                       X_test[X_test.columns.difference(data.bias_cols)],
                        y_test,
                        results_df)
 st.table(results_df)
-#probability_density_functions(y_pred, Z_test,
-                               target_name, bias_names, categories,
-                               'no-bias-data')
+#probability_density_functions(y_pred, Z_test, data, 'no-bias-data')
 """
 # Get distributions for slides
 results_df = pd.DataFrame()
 y_pred = train_predict_new(clf_nn,
-                           X_train[X_train.columns.difference(bias_cols)],
+                           X_train[X_train.columns.difference(data.bias_cols)],
                            y_train,
-                           X_test[X_test.columns.difference(bias_cols)],
+                           X_test[X_test.columns.difference(data.bias_cols)],
                            y_test,
                            results_df, 0)
-plot_distributions(y_pred, Z_test,
-                   target_name, bias_names, categories,
-                   0, results_df, 'no-bias-data')
+plot_distributions(y_pred, Z_test, data, 0, results_df, 'no-bias-data')
 
 ################################################################################
 
@@ -290,17 +267,13 @@ y_pred = train_predict(clf_nn, X_train2_new, y_train2_new,
 y_pred = train_predict(clf_nn, X_train_new, y_train_new,
                                X_test_new, y_test_new, results_df)
 st.table(results_df)
-#probability_density_functions(y_pred, Z_test_new,
-                               target_name, bias_names, categories,
-                               'fair-data')
+#probability_density_functions(y_pred, Z_test_new, data,'fair-data')
 """
 # Get distributions for slides
 results_df = pd.DataFrame()
 y_pred = train_predict_new(clf_nn, X_train_new, y_train_new,
                                    X_test_new, y_test_new, results_df, 0)
-plot_distributions(y_pred, Z_test_new,
-                   target_name, bias_names, categories,
-                   0, results_df, 'fair-data')
+plot_distributions(y_pred, Z_test_new,  data, 0, results_df, 'fair-data')
 
 ################################################################################
 
@@ -320,17 +293,13 @@ y_pred = train_predict(clf_nn, X_train2_new, y_train2_new,
 y_pred = train_predict(clf_nn, X_train_new, y_train_new,
                                X_test, y_test, results_df)
 st.table(results_df)
-#probability_density_functions(y_pred, Z_test,
-                               target_name, bias_names, categories,
-                               'fair-algo')
+#probability_density_functions(y_pred, Z_test, data, 'fair-algo')
 
 # Get distributions for slides
 results_df = pd.DataFrame()
 y_pred = train_predict_new(clf_nn, X_train_new, y_train_new,
                                    X_test, y_test, results_df, 0)
-plot_distributions(y_pred, Z_test_new,
-                   target_name, bias_names, categories,
-                   0, results_df, 'fair-algo')
+plot_distributions(y_pred, Z_test_new, data, 0, results_df, 'fair-algo')
 """
 ################################################################################
 
@@ -344,7 +313,7 @@ results_df = pd.DataFrame()
 
 #for factor in np.linspace(0.0, 5.0, num=11):
 for factor in range(1, 11):
-    st.write('**oversample factor:**', factor)
+    st.write('**Oversample factor:**', factor)
     # Oversampling to address bias in the training dataset
     X_new, y_new, Z_new = oversampler.get_oversampled_data(factor)
     # Shuffle the data after oversampling
@@ -355,8 +324,7 @@ for factor in range(1, 11):
     # make predictions on the test set
     y_pred = train_predict_new(clf_nn, X_train_new, y_train_new,
                                        X_test, y_test, results_df, factor)
-    plot_distributions(y_pred, Z_test,
-                       target_name, bias_names, categories,
+    plot_distributions(y_pred, Z_test, data,
                        factor, results_df, 'fair-algo-'+str(factor))
 
 st.table(results_df)
