@@ -1,7 +1,15 @@
 import pandas as pd
 
-from plots import pie_chart
-from plots import target_by_bias_table_histogram
+from plot_data import pie_chart
+from plot_data import target_by_bias_table_histogram
+
+def categories_to_columns(categories, prefix_sep = ' is '):
+    """contructs and returns the categories_col dict from the categories_dict"""
+    categories_col = {}
+    for k, v in categories.items():
+        val = [k + prefix_sep + vi for vi in v]
+        categories_col[k] = val
+    return categories_col
 
 class Data:
     def __init__(self,
@@ -22,7 +30,7 @@ class Data:
         self.data_df, self.categories = self.preprocess_data(data_df)
         self.binarise_bias_cols()
         self.remove_redundant_cols()
-        self.categories_col = self.categories_to_columns()
+        self.categories_col = categories_to_columns(self.categories, self.prefix_sep)
         self.bias_col_types   = [self.categories[b] for b in self.sensitive_features]
         self.bias_cols        = [self.categories_col[b][1] for b in self.sensitive_features]
         self.target_col_types = self.categories[self.target_feature]
@@ -79,7 +87,8 @@ class Data:
             target_by_bias_df = pd.DataFrame(data = temp, index = self.target_names, columns = self.bias_names[k])
             target_by_bias_df = target_by_bias_df / target_by_bias_df.sum()
 
-            # figure out how to split the bias categories so there are only 2 and ultimately 1 feature to train on
+            # split the bias categories so they are binary and...
+            # associate the positive label so the bias is in favour of it
             mean_prop = target_by_bias_df.mean(axis = 1)
             for b in list(target_by_bias_df):
                 if target_by_bias_df[b].loc[self.pos_target] > mean_prop[self.pos_target]:
@@ -106,19 +115,8 @@ class Data:
         return out.fillna('Unknown'), categories
 
 
-    def categories_to_columns(self):
-        """returns data_df with catagorical features converted to binary and categories
-        which is a dict whihch maps the original categorical features to the possible
-        types"""
-        categories_col = {}
-        for k, v in self.categories.items():
-            val = [k + self.prefix_sep + vi for vi in v]
-            categories_col[k] = val
-        return categories_col
-
-
     def binarise_bias_cols(self):
-        categories_col = self.categories_to_columns()
+        categories_col = categories_to_columns(self.categories, self.prefix_sep)
         pos_bias_cols = {}
         for key in self.pos_bias_labels.keys():
             pos_bias_cols[key] = [key + self.prefix_sep + name for name in self.pos_bias_labels[key]]

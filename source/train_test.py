@@ -53,6 +53,35 @@ def make_training_and_test_sets(X, y, Z, num_train):
     return X_train, X_train2, X_train1, X_test, y_train, y_train2, y_train1, y_test, Z_train, Z_test
 
 
+def split_multi_train_test(data_df, target_col, num_train):
+    num_all = data_df.shape[0]
+    num_test = num_all - num_train
+    test_frac = float(num_test)/float(num_all)
+
+    data_train3, data_test = train_test_split(data_df, test_size=test_frac, stratify=data_df[target_col], random_state=0)
+    data_train2, data_train1 = train_test_split(data_train3, test_size=0.333333, stratify=data_train3[target_col], random_state=0)
+
+    data_train3 = data_train3.reset_index(drop=True)
+    data_train2 = data_train2.reset_index(drop=True)
+    data_train1 = data_train1.reset_index(drop=True)
+    data_test = data_test.reset_index(drop=True)
+
+    return data_train3, data_train2, data_train1, data_test
+
+
+def splits_train_test(data_df, target_col, num_train):
+    num_all = X.shape[0]
+    num_test = num_all - num_train
+    test_frac = float(num_test)/float(num_all)
+
+    data_train, data_test = train_test_split(data_df, test_size=test_frac, stratify=data_df[target_col], random_state=0)
+
+    data_train = data_train.reset_index(drop=True)
+    data_test = data_test.reset_index(drop=True)
+
+    return data_train, data_test
+
+
 def make_train_test_sets(X, y, Z, num_train):
     num_all = X.shape[0]
     num_test = num_all - num_train

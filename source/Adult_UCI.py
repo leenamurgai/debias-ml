@@ -10,37 +10,21 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 
+from configparser import ConfigParser
+parser = ConfigParser()
+parser.read('../config/data_params.ini')
+
 ################################################################################
 ################################################################################
 ################################################################################
 
-st.title('Eliminating Bias in Machine Learning')
-st.header('0 Ingest data''')
+st.title('debias-ml')
+st.header('1 Data Ingestion''')
 
-filename = 'adult-data.csv'
-
+filename = parser.get('data_values', 'filename')
 data_df = pd.read_csv('../data/preprocessed/'+filename, na_values='?')
 st.write('')
 st.write('Data read successfully!')
-
-################################################################################
-################################################################################
-################################################################################
-
-sensitive_features  = ['sex', 'race']
-target_feature = 'ann_salary'
-pos_target  = '>50K'
-
-st.header('1 Exploration')
-st.write('')
-
-st.write('**The first 5 rows of the raw data:**')
-st.write(data_df.head())
-
-st.write('')
-st.write('**Some basic statistics:**')
-st.write('Number of data points =', len(data_df.index))
-st.write('Number of features =', len(data_df.columns)-1)
 
 ################################################################################
 ################################################################################
@@ -53,46 +37,63 @@ from train_test import make_training_and_test_sets
 from train_test import normalise
 from oversample import Oversampler
 
-st.header('2 Preparing the Data')
+sensitive_features  = parser.get('data_values', 'sensitive_features').split()
+target_feature = parser.get('data_values', 'target_feature')
+pos_target  = parser.get('data_values', 'pos_target')
+
+st.header('2 Data Exploration & Preparation')
 st.write('')
-st.subheader('2.1 Converting categorical columns to binary')
+st.subheader('2.1 Peek at the raw data')
 
-data = Data(data_df, sensitive_features, target_feature, pos_target)
-
-st.write('')
-st.write("""We reduce our bias features to 2 possible classes so our bias
-features each correspond to a single column""")
-st.write(data.bias_cols)
+st.write('**The first 5 rows of the raw data:**')
+st.write(data_df.head())
 
 st.write('')
-st.write('**The first 5 rows of the data:**')
-st.write(data.data_df.head())
-
-# Save our processed data
-data.data_df.to_csv('../data/processed/'+filename, index=False)
+st.write('**Some basic statistics:**')
+st.write('Number of data points =', len(data_df.index))
+st.write('Number of features =', len(data_df.columns)-1)
 
 ################################################################################
 
 st.write('')
-st.subheader('2.2 Post-processing exploration')
+st.subheader('2.2 Exploration & Processing')
+
+data = Data(data_df, sensitive_features, target_feature, pos_target)
+
+st.write('')
+st.write("""We reduce each sensitive features to a single binary class.""")
+st.write(data.bias_cols)
+data_df = data.data_df
+
+st.write('')
+st.write('**The first 5 rows of the data after processing:**')
+st.write(data_df.head())
+
+# Save our processed data
+data_df.to_csv('../data/processed/'+filename, index=False)
+
+################################################################################
+
+st.write('')
+st.subheader('2.3 Post-processing exploration')
 st.write('')
 st.write('**Top 10 most correlated features to the target feature**')
 st.write('')
-st.write(top_n_correlated_features(data.data_df, data.target_col, 10))
+st.write(top_n_correlated_features(data_df, data.target_col, 10))
 st.write('')
 st.write('**Top 10 most correlated features to the bias feature**')
 for b in data.bias_cols:
     st.write('')
-    st.write(top_n_correlated_features(data.data_df, b, 10))
+    st.write(top_n_correlated_features(data_df, b, 10))
 st.write('')
 st.write('**Correlation Heatmap**')
-corr_df = data.data_df.corr()
+corr_df = data_df.corr()
 heatmap(corr_df, 'correlation-heat-map')
 
 ################################################################################
 
 st.write('')
-st.subheader('2.3 Separate features and labels')
+st.subheader('2.4 Separate features and labels')
 st.write('')
 
 # Extract feature (X) and target (y) columns
@@ -100,18 +101,20 @@ st.write("Number features: ", len(data.feature_cols))
 st.write("Target column: ", data.target_col)
 st.write("Bias columns: ",data.bias_cols)
 
-X_all = data.data_df[data.feature_cols]
-y_all = data.data_df[data.target_col]
-Z_all = data.data_df[data.bias_cols]
+X_all = data_df[data.feature_cols]
+y_all = data_df[data.target_col]
+Z_all = data_df[data.bias_cols]
 
 ################################################################################
 
 st.write('')
-st.subheader('2.4 Splitting data into training and test sets')
+st.subheader('2.5 Splitting data into training and test sets')
 st.write('')
 
 # Splitting the original dataset into training and testing parts
-n_train = 30000
+parser.read('../config/train_params.ini')
+n_train = int(parser.get('train_values', 'n_train'))
+
 (X_train, X_train2, X_train1, X_test,
 y_train, y_train2, y_train1, y_test,
 Z_train, Z_test) = make_training_and_test_sets(X_all, y_all, Z_all, n_train)
@@ -123,7 +126,7 @@ st.write('Test set: {} samples'.format(X_test.shape[0]))
 ################################################################################
 
 st.write('')
-st.subheader('2.5 Setup the Oversampler')
+st.subheader('2.6 Setup the Oversampler')
 st.write('')
 
 # Set up the Oversampler
@@ -150,10 +153,10 @@ st.write('Augmented test set: {} samples'.format(X_test_new.shape[0]))
 
 ################################################################################
 
-st.subheader('2.6 Post-aumentation exploration')
+st.subheader('2.7 Post-aumentation exploration')
 st.write('')
 
-new_data_df = pd.DataFrame(columns=list(data.data_df))
+new_data_df = pd.DataFrame(columns=list(data_df))
 new_data_df[list(X_train)] = X_train_new
 new_data_df[data.target_col] = y_train_new
 
@@ -161,7 +164,7 @@ st.write('**Top 10 most correlated features to the target feature**')
 st.write('')
 st.write(top_n_correlated_features(new_data_df, data.target_col, 10))
 st.write('')
-st.write('**Top 10 most correlated features to the bias feature**')
+st.write('**Top 10 most correlated features to the sensitive features**')
 for b in data.bias_cols:
     st.write('')
     st.write(top_n_correlated_features(new_data_df, b, 10))
@@ -173,6 +176,7 @@ heatmap(new_data_df.corr()-corr_df, 'correlation-change')
 ################################################################################
 ################################################################################
 ################################################################################
+
 from train_test import make_results_df
 from model import nn_classifier
 from train_test import make_train_test_sets
@@ -196,13 +200,16 @@ y_pred = train_predict(clf_nn, X_train1, y_train1, X_test, y_test, results_df)
 y_pred = train_predict(clf_nn, X_train2, y_train2, X_test, y_test, results_df)
 y_pred = train_predict(clf_nn, X_train, y_train, X_test, y_test, results_df)
 st.table(results_df)
-#probability_density_functions(y_pred, Z_test, data, all-data')
+#probability_density_functions(y_pred, Z_test,
+                               target_feature, sensitive_features, bias_cols,
+                               categories, all-data')
 """
 # Get distributions for slides
 results_df = pd.DataFrame()
 y_pred = train_predict_new(clf_nn, X_train, y_train, X_test, y_test,
                                    results_df, 0)
-plot_distributions(y_pred, Z_test, data, 0, results_df, 'all-data')
+plot_distributions(y_pred, Z_test, target_feature, sensitive_features,
+                   bias_cols, categories, 0, results_df, 'all-data')
 
 ################################################################################
 
@@ -230,7 +237,9 @@ y_pred = train_predict(clf_nn,
                        y_test,
                        results_df)
 st.table(results_df)
-#probability_density_functions(y_pred, Z_test, data, 'no-bias-data')
+#probability_density_functions(y_pred, Z_test,
+                              target_feature, sensitive_features, bias_cols,
+                              categories, 'no-bias-data')
 """
 # Get distributions for slides
 results_df = pd.DataFrame()
@@ -240,7 +249,8 @@ y_pred = train_predict_new(clf_nn,
                            X_test[X_test.columns.difference(data.bias_cols)],
                            y_test,
                            results_df, 0)
-plot_distributions(y_pred, Z_test, data, 0, results_df, 'no-bias-data')
+plot_distributions(y_pred, Z_test, target_feature, sensitive_features,
+                   bias_cols, categories, 0, results_df, 'no-bias-data')
 
 ################################################################################
 
@@ -267,13 +277,16 @@ y_pred = train_predict(clf_nn, X_train2_new, y_train2_new,
 y_pred = train_predict(clf_nn, X_train_new, y_train_new,
                                X_test_new, y_test_new, results_df)
 st.table(results_df)
-#probability_density_functions(y_pred, Z_test_new, data,'fair-data')
+#probability_density_functions(y_pred, Z_test_new,
+                              target_feature, sensitive_features, bias_cols,
+                              categories,'fair-data')
 """
 # Get distributions for slides
 results_df = pd.DataFrame()
 y_pred = train_predict_new(clf_nn, X_train_new, y_train_new,
                                    X_test_new, y_test_new, results_df, 0)
-plot_distributions(y_pred, Z_test_new,  data, 0, results_df, 'fair-data')
+plot_distributions(y_pred, Z_test_new,  target_feature, sensitive_features,
+                   bias_cols, categories, 0, results_df, 'fair-data')
 
 ################################################################################
 
@@ -293,13 +306,16 @@ y_pred = train_predict(clf_nn, X_train2_new, y_train2_new,
 y_pred = train_predict(clf_nn, X_train_new, y_train_new,
                                X_test, y_test, results_df)
 st.table(results_df)
-#probability_density_functions(y_pred, Z_test, data, 'fair-algo')
+#probability_density_functions(y_pred, Z_test,
+                              target_feature, sensitive_features, bias_cols,
+                              categories, 'fair-algo')
 
 # Get distributions for slides
 results_df = pd.DataFrame()
 y_pred = train_predict_new(clf_nn, X_train_new, y_train_new,
                                    X_test, y_test, results_df, 0)
-plot_distributions(y_pred, Z_test_new, data, 0, results_df, 'fair-algo')
+plot_distributions(y_pred, Z_test_new, target_feature, sensitive_features,
+                   bias_cols, categories, 0, results_df, 'fair-algo')
 """
 ################################################################################
 
@@ -324,8 +340,9 @@ for factor in range(1, 11):
     # make predictions on the test set
     y_pred = train_predict_new(clf_nn, X_train_new, y_train_new,
                                        X_test, y_test, results_df, factor)
-    plot_distributions(y_pred, Z_test, data,
-                       factor, results_df, 'fair-algo-'+str(factor))
+    plot_distributions(y_pred, Z_test, target_feature, sensitive_features,
+                       bias_cols, categories, factor, results_df,
+                       'fair-algo-'+str(factor))
 
 st.table(results_df)
 
