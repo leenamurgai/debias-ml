@@ -21,6 +21,7 @@ from train_test import make_results_df
 #from train_test import train_predict
 from train_test import train_predict_new
 from plot_results import plot_distributions
+from sklearn.utils import shuffle
 
 ################################################################################
 ################################################################################
@@ -110,6 +111,8 @@ st.write('Augmented training set: {} samples'.format(X_train_new.shape[0]))
 st.write('Augmented test set: {} samples'.format(X_test_new.shape[0]))
 
 ################################################################################
+################################################################################
+################################################################################
 
 st.header('3 Training a 3 layer neural network...')
 st.write('')
@@ -149,10 +152,11 @@ st.write('')
 st.subheader("""3.3 ...after oversampling and testing on the oversampled data""")
 st.write('')
 st.write("""These results do not reflect how our model would work on real data
-    since the test set is from the oversampled data. The purpose of these tests
-    is to validate our oversampling - if we have done it correctly, when we test
-    on data from the same (oversampled) distribution we should find that the
-    bias reduction is significant with a bias factor close to 1.""")
+            since the test set is from the oversampled data. The purpose of
+            these tests is to validate our oversampling - if we have done it
+            correctly, when we test on data from the same (oversampled)
+            distribution we should find that the bias reduction is significant
+            with a bias factor close to 1.""")
 st.write('')
 
 
@@ -166,8 +170,6 @@ plot_distributions(y_pred, Z_test_new, target_feature, sensitive_features,
                    bias_cols, categories, 0, results_df, 'fair-data')
 
 ################################################################################
-
-from sklearn.utils import shuffle
 
 st.write('')
 st.subheader('3.4 ...after oversampling by different amounts')

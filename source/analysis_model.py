@@ -108,6 +108,8 @@ st.write('Augmented training set: {} samples'.format(X_train_new.shape[0]))
 st.write('Augmented test set: {} samples'.format(X_test_new.shape[0]))
 
 ################################################################################
+################################################################################
+################################################################################
 
 st.header('3 Training a 3 layer neural network...')
 st.write('')

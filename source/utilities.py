@@ -1,7 +1,8 @@
 from configparser import ConfigParser
 
 
-def write_params_to_file(bias_cols, target_col, bias_col_types, categories):
+def write_params_to_file(bias_cols, target_col, bias_col_types, categories,
+                         filename = '../config/new_params.ini'):
     parser = ConfigParser()
     parser.add_section('new_data_values')
     parser.set('new_data_values', 'bias_cols', str(bias_cols))
@@ -10,14 +11,15 @@ def write_params_to_file(bias_cols, target_col, bias_col_types, categories):
     parser.add_section('categories')
     for k, v in categories.items():
         parser.set('categories', k, str(v))
-    with open('../config/new_params.ini', 'w') as file:
+    with open(filename, 'w') as file:
         parser.write(file)
 
 
 class DataParams:
-    def __init__(self):
+    """Class for extracting parameters for data processing"""
+    def __init__(self, filename = '../config/params.ini'):
         parser = ConfigParser()
-        parser.read('../config/params.ini')
+        parser.read(filename)
         self.filename = parser.get('data_values', 'filename')
         self.sensitive_features  = parser.get('data_values', 'sensitive_features').split()
         self.target_feature = parser.get('data_values', 'target_feature')
@@ -26,9 +28,10 @@ class DataParams:
 
 
 class ProcessedDataParams:
-    def __init__(self):
+    """Class for extracting parameters post data processing"""
+    def __init__(self, filename = '../config/new_params.ini'):
         self.parser = ConfigParser()
-        self.parser.read('../config/new_params.ini')
+        self.parser.read(filename)
         self.bias_cols = self.get_bias_cols()
         self.target_col = self.parser.get('new_data_values', 'target_col')
         self.bias_col_types = self.get_bias_col_types()

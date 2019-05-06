@@ -14,7 +14,7 @@ from utilities import DataParams
 from utilities import write_params_to_file
 from data import Data
 from explore import top_n_correlated_features
-from plots import heatmap
+from plot_results import heatmap
 from oversample import Oversampler
 
 ################################################################################
@@ -72,9 +72,9 @@ st.write('')
 st.subheader('2.3 Post-processing exploration')
 st.write('')
 
-st.write("Number features: ", len(feature_cols))
-st.write("Target column: ", target_col)
-st.write("Bias columns: ",bias_cols)
+st.write("**Number features: **", len(feature_cols))
+st.write("**Target column: **", target_col)
+st.write("**Bias columns: **",bias_cols)
 st.write('')
 st.write("""We have reduced each sensitive feature to a single binary class.
             In each case we keep the feature that the bias appears to be in

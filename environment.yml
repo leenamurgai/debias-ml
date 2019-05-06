@@ -283,6 +283,7 @@ dependencies:
     - backports-abc==0.5
     - base58==1.0.3
     - bleach==3.0.2
+    - blinker==1.4
     - boto3==1.9.86
     - botocore==1.12.86
     - enum-compat==0.0.2
@@ -294,7 +295,7 @@ dependencies:
     - pathtools==0.1.2
     - pbr==5.1.2
     - s3transfer==0.1.13
-    - streamlit==0.25.0
+    - streamlit==0.36.0
     - tokenize-rt==2.1.0
     - toml==0.10.0
     - tzlocal==1.5.1
