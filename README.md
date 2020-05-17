@@ -17,9 +17,9 @@ The graphic below shows the distribution of predictions on the test set as it ch
 
 ## 2. Resource list
 
-- [**Presentation slides**](http://bit.ly/debias-ml-slides) explaining the problem, solution approach and results in 5 mins are available here
-- [**Presentation recording**](http://bit.ly/debias-ml-recording) will be linked to here when available
-- [**Blog post**](http://bit.ly/debias-ml-blog) explaining the problem, solution approach and results will be linked to here when available
+- [**Blog post**](http://bit.ly/debias-ml-blog) on Medium
+- [**Presentation recording**](http://bit.ly/debias-ml-video) Lightning talk at PyBay2019
+- [**Presentation slides**](http://bit.ly/debias-ml-slides)
 - **Streamlit reports:**
   - [**Data Analysis Report**](https://share.streamlit.io/0.36.0-2Qf24/index.html?id=JDjgoPh55HrSxbKvpthCj2M) showing only the data analysis
   - [**Model Analysis Report**](https://share.streamlit.io/0.36.0-2Qf24/index.html?id=UCo7PvitQe3DqdWrz2ZBon) showing only model amalysis
